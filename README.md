@@ -1,0 +1,2 @@
+# Exploring-the-Impact-of-Instruction-Types-on-Behavioural-Outcomes-in-a-Two-Stimulus-AAT
+Bachelor Thesis "Exploring the Impact of Instruction Types on Behavioural Outcomes in a Two-Stimulus Approach-Avoidance Task" A thesis submitted in fulfilment of the requirements for the degree of Bachelor of Science in the Neurobiopsychology Research Group Institute of Cognitive Science University of Osnabrück
