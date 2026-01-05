@@ -21,7 +21,7 @@ two Approach-Avoidance Tasks (AAT)
 ### RT_analysis_overleaf. R 
   - Imports preprocessed datasets for the Implicit and Explicit Task 
     and harmonises factor coding 
-  - Filters to valid Rt trials, adds trial index and standardised trial covariate 
+  - Filters to valid RT trials, adds trial index and standardised trial covariate 
     for learning/fatigue modelling 
   - Computes descriptove summaries (counts and mean/SD/SE) by condition
     and by congruence/valence and produces plots 
