@@ -1,31 +1,104 @@
-# README file for Attention and Action Task, Experiment 2
-This information corresponds to the dataset for Task 3.
-In this dataset, the information from both blocks has been merged, and the test trials have been removed. This gives a total of 176 trials per participant. 
-No participants have been excluded from the analysis yet.
+# Explicit Task Preprocessing (Experiment 2)
 
-# Preprocessing
-1. Extraction of information regarding specific events (e.g., task start, picture presentation).
-2. A filter was applied to remove implausible spikes.
-3. Data samples around signal loss were set to NaN.
-4. A median filter was applied to smooth the data and emphasize large amplitude saccades.
-5. Voloh et al., 2020. algorithm was applied to detect saccades based on velocity.
-6. Data was epoched in 1500 ms windows (-500 to 1500).
+This folder contains the preprocessing code for **Experiment 2 (Explicit task)** from my bachelor thesis:
 
-Most of the datasets have the structure 88 x 146 (trials x sessions).
-Subjects with incomplete sessions were already removed.
-●	behavioralReactionTime.mat = reaction time from the joystick. This reaction time is relative to frame onset, since the subjects are required to react to the frame color. Here, some trials are “NaN”. They correspond to the trials where the frame did not appear.
-●	blockOrder.mat = string indicating the block order for each session. A means that the subject was presented first with a CONGRUENT block and then the INCONGRUENT block. B means that the subject was presented first with an INCONGRUENT block and then a CONGRUENT block.
-●	fixationCrossTime.mat = time, in eye-tracking units, on which the fixation cross appeared on each trial.
-●	frameSide.mat = matrix indicating the side on which the frame was presented on each trial. 1 means RIGHT and 0 means LEFT.
-●	frameTimes.mat =  time, in eye-tracking units, on which the frame appeared on each trial.
-●	pictureSequence.mat is a 3D matrix containing the IDs of the pictures presented on each trial. To understand this matrix:
-○	The value (1,1,1) corresponds to the first trial, the picture on the LEFT, for session 1 of subject one.
-○	The value (1,2,1) corresponds to the first trial, the picture on the RIGHT, for session 1 of subject one.
-●	pictureTimes.mat = time, in eye-tracking units, on which the picture appeared on each trial.
-●	reactionType.mat = type of reaction generated for every subject on every trial, it is a string that can either be “push” or “pull”.
-●	trialTime.mat = timeline for each trial from picture onset to next fixation cross onset.
-●	valenceLooked.mat = matrix indicating the valence of the picture looked at on every trial. 1 means that the subject looked at a POSITIVE picture, 0 means that the subject looked at a NEGATIVE picture. Here, some trials are “NaN”. They correspond to the trials where the frame did not appear.
-●	xPositionData.mat = position of the eye, for every trial from picture onset to the next fixation cross onset. This is based on the dominant eye of the subject.
+**“Exploring the Impact of Instruction Types on Behavioural Outcomes in a Two-Stimulus Approach-Avoidance Task”**
 
-Note: You have two variables that indicate which trials you should not consider because the frame was not presented. Make sure to use this information for all your analyses.
+The goal of this preprocessing pipeline is to convert the raw MATLAB exports into a clean trial-level dataset that can be used for reaction time and accuracy analyses in R (mixed-effects models and descriptive plots).
+
+---
+The preprocessing was implemented in R and follows the protocol provided by Aitana Grasso-Cladera. 
+
+## Files in this folder
+
+- `Explicit_Preprocessing_Steps.R`  
+  Main preprocessing script that loads the raw MATLAB output, repairs timing inconsistencies, aligns behavioural and eye-tracking data, and produces the final trial-level dataset used for analysis.
+
+- `README_Experiment 2_Attention and Action Task.docx`  
+  Original preprocessing protocol and methodological instructions provided by the supervisor.  
+  This document served as the conceptual guideline for the preprocessing steps implemented in R.
+
+
+My script implements these steps in code and additionally includes diagnostic summaries/plots to verify that preprocessing behaved as expected.
+
+> **Important:** Raw data (MATLAB `.mat` files) are not included in this repository due to privacy/ethics and data sharing restrictions.
+
+---
+## What this script does (high-level)
+
+### 1) Load and align raw MATLAB files
+The script loads behavioural timing and stimulus information from `.mat` files, including:
+- reaction times
+- valence labels
+- frame times and frame side
+- trial timing and eye-tracking-related time series (optional)
+- picture IDs (left/right)
+- reaction types and block order (converted from MATLAB string format)
+
+Because some MATLAB outputs are stored as nested lists/cell arrays, the script first converts them into R-friendly formats and aligns them across trials.
+
+### 2) Combine blocks into one continuous sequence per participant
+Each participant completed two sessions/blocks (88 trials each).  
+The script concatenates session 1 + session 2 into **176 total trials per participant**, keeping trial order intact.
+
+### 3) Determine the framed picture ID per trial
+For each trial, both a left and right image are shown.  
+Using `frame_side` (0 = left, 1 = right), the script selects the framed image:
+
+- `picture_id` = framed image  
+- `left_id`, `right_id` = both presented image IDs
+
+### 4) Compute congruence and accuracy
+Congruence is derived from the block order (`A` vs `B`) and trial number, following the experiment design.  
+Accuracy is computed based on the mapping of:
+- `congruence × valence × reaction_type`
+
+The result is a trial-level variable:
+- `accuracy` ∈ {correct, incorrect}
+
+### 5) Optional: eye-tracking alignment and plotting (exploratory)
+If eye-tracking inspection is needed, the script contains helper functions to:
+- align gaze time-series to picture onset
+- compute rough saccade/fixation timing
+- plot single-trial eye traces for inspection
+
+This step is exploratory and does not alter the behavioural preprocessing output.
+
+---
+
+## Behavioural preprocessing steps (reaction time cleaning)
+
+After building the combined trial dataframe, the script applies the same RT-cleaning logic used in the thesis:
+
+### Stage A — Baseline overview
+- Keep all trials with available RTs  
+- Summarise baseline accuracy and completeness per participant
+
+### Stage B — Remove invalid responses
+- Set RT to `NA` if the trial is incorrect
+- Set RT to `NA` if RT < 150 ms
+
+### Stage C — Participant exclusion rule
+- Participants with < 90% valid trials (after Stage B) are excluded from analysis
+
+### Stage D — Winsorisation (outlier handling)
+- RTs are winsorised using a global cap:  
+  **cap = global_mean + (2 × global_SD)**  
+- (A trimming alternative is included for comparison but not used in the thesis)
+
+---
+
+## Output
+The script writes a cleaned behavioural dataset to:
+
+- `experiment_2_preprocessed.csv`
+
+Key columns include:
+- `participant`, `trial`, `block_order`
+- `valence`, `congruence`, `reaction_type`, `accuracy`
+- `RT_ms`, `RT_log10`
+- `frame_time`, `frame_side`, `picture_time`
+- `left_id`, `right_id`, `picture_id`
+
+
 
