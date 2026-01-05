@@ -11,7 +11,10 @@ library(tibble)
 library(tidyr)
 library(ggplot2)
 library(cowplot)
+library(zoo)
 library(lme4)
+library(broom.mixed)
+
 
 
 
@@ -395,7 +398,7 @@ plot_trial_eye_trace_new <- function(participant_id, trial_number,
   side_fixated <- NA
   
   detect_fixation_in_box <- function(xPos, tVec, box_bounds, min_samples = 5) {
-    in_box <- xPos >= box_bounds[1] & xPos <- box_bounds[2] & 
+    in_box <- xPos >= box_bounds[1] & xPos <= box_bounds[2] & 
       (xPos < (screen_center = dead_zone) | xPos > (screen_center + dead_zone))
     
     sustained <- zoo::rollapply(

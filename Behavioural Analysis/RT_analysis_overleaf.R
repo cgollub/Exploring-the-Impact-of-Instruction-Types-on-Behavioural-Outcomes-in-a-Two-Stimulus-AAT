@@ -760,6 +760,7 @@ ggplot(fe_E2_all, aes(x = model, y = estimate, group = 1)) +
 #=================   Picture Analysis (Exploration)    ========================
 #==============================================================================
 #downloading the images for content analysis 
+# local access to stimulus picture files required - not included in the repo 
 img_dir  <- file.path("[ORIG]allpics_1-44pos_45-88neg")
 out_dir <- file.path("Set/Path/To/Where/You/Want/It/Be/Saved")
 ##############################################################################

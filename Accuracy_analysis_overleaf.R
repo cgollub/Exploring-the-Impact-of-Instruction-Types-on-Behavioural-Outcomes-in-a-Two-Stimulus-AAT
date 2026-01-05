@@ -13,11 +13,11 @@ library(ggeffects)
 library(dplyr)
 library(magick)
 library(tools)
-library(broom.mixed)
 
 #==============================================================================
 #=====   Load necessary data from preprocessing         =======================
 #==============================================================================
+
 setwd("SET/YOUR/PATH/TO/SAVED/CSV")
 
 E1 <- readr::read_csv("experiment_1_preprocessing.csv")
@@ -54,51 +54,43 @@ E2 <- E2 %>%
 #====     Cleaning Data for Accuracy                           ===========
 #====  --> Build 0/1 accuracy and per-participant trial index  ===========
 #=========================================================================
-# ==============================================================================
-# Helper: normalize accuracy to 0/1 across datasets
-# ==============================================================================
-to_acc01 <- function(x) {
-  # logical TRUE/FALSE
-  if (is.logical(x)) {
-    return(ifelse(is.na(x), NA_integer_, ifelse(x, 1L, 0L)))
-  }
-  
-  # everything else -> string
-  x2 <- tolower(trimws(as.character(x)))
-  
-  dplyr::case_when(
-    x2 %in% c("true", "correct", "1")    ~ 1L,
-    x2 %in% c("false", "incorrect", "0") ~ 0L,
-    TRUE                                  ~ NA_integer_
-  )
-}
 
 E1_acc <- E1 %>%
-  mutate(acc01 = to_acc01(accuracy)) %>%
+  mutate(
+    acc01 = case_when(
+      accuracy == TRUE  ~ 1L,
+      accuracy == FALSE ~ 0L,
+      TRUE ~ NA_integer_
+    )
+  ) %>%
   group_by(participant) %>%
   arrange(trial, .by_group = TRUE) %>%
   mutate(
     trial_index = trial,
-    z_trial = as.numeric(scale(trial_index)),
-    Experiment = "Implicit Task"
-  ) %>%
+    z_trial = as.numeric(scale(trial_index)), 
+    Experiment="Implicit Task") %>%
   ungroup() %>%
-  filter(!is.na(acc01)) %>%
+  filter(!is.na(acc01)) %>%# GLMM needs 0/1 only
   select(-accuracy)
 
 E2_acc <- E2 %>%
-  mutate(acc01 = to_acc01(accuracy)) %>%
+  mutate(
+    acc01 = case_when(
+      accuracy == "correct"   ~ 1L,
+      accuracy == "incorrect" ~ 0L,
+      TRUE ~ NA_integer_
+    )
+  ) %>%
   group_by(participant) %>%
   arrange(trial, .by_group = TRUE) %>%
   mutate(
     trial_index = trial,
-    z_trial = as.numeric(scale(trial_index)),
-    Experiment = "Explicit Task"
+    z_trial = as.numeric(scale(trial_index)), 
+    Experiment="Explicit Task"
   ) %>%
   ungroup() %>%
-  filter(!is.na(acc01)) %>%
+  filter(!is.na(acc01)) %>% 
   select(-accuracy)
-
 
 # --- Harmonize frame_side variable ---
 E1_acc <- E1_acc %>%
@@ -387,7 +379,7 @@ ggplot(E1_acc_learning, aes(x = trial_index, y = mean_acc)) +
               alpha = 0.2, fill = "#2ca02c") +
   geom_smooth(method = "loess", span = 0.3, color = "darkorange", se = FALSE) +
   labs(
-    x = "Trial Index",
+    x = "Trial Index (z-standardized)",
     y = "Mean Accuracy"
   ) +
   theme_minimal(base_size = 20) +
@@ -408,7 +400,7 @@ ggplot(E2_acc_learning, aes(x = trial_index, y = mean_acc)) +
               alpha = 0.2, fill = "#2ca02c") +
   geom_smooth(method = "loess", span = 0.3, color = "darkorange", se = FALSE) +
   labs(
-    x = "Trial Index",
+    x = "Trial Index (z-standardized)",
     y = "Mean Accuracy"
   ) +
   theme_minimal(base_size = 20)+
@@ -981,7 +973,7 @@ ggplot(eff_partner_E2, aes(x = x, y = predicted)) +
 # ============ Spreadsheet for co-ID ===========================================
 # ==============================================================================
 # =========== 1) Average partner effect per co_id (unchanged) ============
-per_co_image <- partner_acc_E2 %>%  
+per_co_image <- partner_acc %>%
   group_by(co_id) %>%
   summarise(
     n_trials          = n(),
